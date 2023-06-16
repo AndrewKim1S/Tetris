@@ -15,12 +15,38 @@ Application::Application(int width, int length) {
 		this->windowHeight = length;
 		
 		cell.setSize(sf::Vector2f(tileSize-1, tileSize-1));
-		pieceFallTime = 500;
+		pieceFallTime = 1000;
 
 		clock.restart();
 		pieceClock.restart();
 
 		state = State::RUN;
+	
+		currentLevel = 0;
+		linesCleared = 0;
+
+		score = 0;
+		scoreText = "Score " + std::to_string(score);
+
+		font = new sf::Font();
+		assert(font->loadFromFile("util/RoseauSlabFree-Yz2yL.otf"));
+		playMode = sf::Text();
+		playMode.setFont(*font);
+		playMode.setCharacterSize(35);
+		playMode.setFillColor(sf::Color::White);
+		playMode.setPosition(500, 50);
+		playMode.setString("Player");
+		scoreBoard = sf::Text();
+		scoreBoard.setFont(*font);
+		scoreBoard.setCharacterSize(30);
+		scoreBoard.setFillColor(sf::Color::White);
+		scoreBoard.setPosition(500, 100);
+		scoreBoard.setString(scoreText);
+		level.setFont(*font);
+		level.setCharacterSize(30);
+		level.setFillColor(sf::Color::White);
+		level.setPosition(500, 150);
+		level.setString("Level " + std::to_string(currentLevel));
 
 		newBlock();
 }
@@ -28,6 +54,7 @@ Application::Application(int width, int length) {
 // Deconstructor
 Application::~Application() {
 		delete window;
+		delete font;
 }
 
 // main run function to update, render, and poll events
@@ -47,6 +74,15 @@ void Application::run() {
 				case State::PAUSE:
 						pollEvents();
 						break;
+				case State::GAMEOVER:
+						pollEvents();
+						// check event 
+						while(window->pollEvent(event)) {
+								if(event.type == sf::Event::Closed) {
+										window->close();
+								}
+						}
+						break;
 				default:
 						break;
 		}
@@ -58,6 +94,11 @@ void Application::render() {
 
 		float xOffset = 50;
 		float yOffset = 50;
+
+		// render text
+		window->draw(playMode);
+		window->draw(scoreBoard);
+		window->draw(level);
 		
 		// render grid lines
 		for(int i = 0; i < boardLength+1; i++) {
@@ -240,6 +281,13 @@ bool Application::isRunning() {
 
 // Create a new piece
 void Application::newBlock() {
+		for(int x = 0; x < boardLength; x++) {
+				// Game over
+				if(board[x][0] != 0) {
+						playMode.setString("Game Over");
+						state = State::GAMEOVER;
+				}
+		}
 		piece = Tetromino(rand() % 7);
 }
 
@@ -289,11 +337,43 @@ void Application::clearLines() {
 				}
 		}
 
+		switch(rows.size()) {
+				case 0:
+						break;
+				case 1:
+						score += 40 * (currentLevel + 1);
+						break;
+				case 2:
+						score += 100 * (currentLevel + 1);
+						break;
+				case 3:
+						score += 300 * (currentLevel + 1);
+						break;
+				case 4:
+						score += 1200 * (currentLevel + 1);
+				default:
+						break;
+		}
+
+		linesCleared += rows.size();
+		manageLevel();
+		scoreText = "Score " + std::to_string(score);
+		scoreBoard.setString(scoreText);
+
 		for(size_t i = 0; i < rows.size(); i++) {
 				for(int y = rows[i] + i; y >= 1; y--) {
 						for(int x = 0; x < boardLength; x++) {
 								board[x][y] = board[x][y-1];
 						}
 				}
+		}
+}
+
+void Application::manageLevel() {
+		if(linesCleared == 10) {
+				linesCleared = 0;
+				currentLevel++;
+				pieceFallTime = pieceFallTime * 0.8;
+				level.setString("Level " + std::to_string(currentLevel));
 		}
 }

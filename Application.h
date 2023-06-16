@@ -3,6 +3,7 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
+#include <cassert>
 
 #include "Tetromino.h"
 
@@ -16,7 +17,8 @@ class Application {
 		// application states
 		enum State {
 				RUN,
-				PAUSE
+				PAUSE,
+				GAMEOVER
 		};
 
 		public:
@@ -33,12 +35,19 @@ class Application {
 				void newBlock();
 				bool checkPieceMovement();
 				void clearLines();
+				void manageLevel();
 
 		private:
 				sf::RenderWindow* window;
 				sf::Event event;
 				sf::Clock clock;
 				sf::Clock pieceClock;
+
+				sf::Font* font;
+				sf::Text playMode;
+				sf::Text scoreBoard;
+				sf::Text level;
+				std::string scoreText;
 
 				int windowLength;
 				int windowHeight;
@@ -50,5 +59,9 @@ class Application {
 
 				sf::RectangleShape cell;
 
-				int pieceFallTime;
+				double pieceFallTime;
+				int score;
+
+				int currentLevel;
+				int linesCleared;
 };
