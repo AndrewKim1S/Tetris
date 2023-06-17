@@ -20,7 +20,10 @@ Application::Application(int width, int length) {
 		clock.restart();
 		pieceClock.restart();
 
+
+		// Change this to State::AIPLAY 
 		state = State::RUN;
+		// state = State::AIPLAY;
 	
 		currentLevel = 0;
 		linesCleared = 0;
@@ -28,6 +31,24 @@ Application::Application(int width, int length) {
 		score = 0;
 		scoreText = "Score " + std::to_string(score);
 
+		// Music 
+		int temp = rand() % 2;
+		std::string songTitle = "util/TetrisMusic" + std::to_string(temp) + ".wav";
+		assert(soundtrack.openFromFile(songTitle));
+		if(temp == 1) {
+				soundtrack.setVolume(100);
+		} else {
+				soundtrack.setVolume(30);
+		}
+		soundtrack.setLoop(true);
+		soundtrack.play();
+
+		// Sound Effects
+		assert(lineclearSound.loadFromFile("util/clear.wav"));
+		assert(gameOverSound.loadFromFile("util/success.wav"));
+		assert(tetrisSound.loadFromFile("util/tetrisClear.wav"));
+
+		// Text UI
 		font = new sf::Font();
 		assert(font->loadFromFile("util/RoseauSlabFree-Yz2yL.otf"));
 		playMode = sf::Text();
@@ -48,6 +69,8 @@ Application::Application(int width, int length) {
 		level.setPosition(500, 150);
 		level.setString("Level " + std::to_string(currentLevel));
 
+		tetrisAI = AI();
+
 		newBlock();
 }
 
@@ -61,6 +84,17 @@ Application::~Application() {
 void Application::run() {
 		// check state of application
 		switch(state) {
+				case State::AIPLAY:
+						update();
+						render();
+						tetrisAI.findBestPlay(board, piece);
+						state = State::PAUSE;
+						while(window->pollEvent(event)) {
+								if(event.type == sf::Event::Closed) {
+										window->close();
+								}
+						}
+						break;
 				case State::RUN:
 						if(clock.getElapsedTime().asMilliseconds() > 10) {
 								pollEvents();
@@ -75,13 +109,22 @@ void Application::run() {
 						pollEvents();
 						break;
 				case State::GAMEOVER:
-						pollEvents();
+						playMode.setString("Game Over");
 						// check event 
 						while(window->pollEvent(event)) {
 								if(event.type == sf::Event::Closed) {
 										window->close();
 								}
+								if(event.type == sf::Event::KeyPressed) {
+								
+										// close window when escape
+										if(event.key.code == sf::Keyboard::Escape) {
+												window->close();
+										}
+								}
+
 						}
+						render();
 						break;
 				default:
 						break;
@@ -171,6 +214,7 @@ void Application::pollEvents() {
 										} 
 										else {
 												state = State::PAUSE;
+												state = State::AIPLAY;
 										}
 								}
 
@@ -235,18 +279,6 @@ void Application::pollEvents() {
 void Application::update() {
 		bool ready = false;
 	
-		/*
-		for(int y = 0; y < boardHeight; y++) {
-				for(int x = 0; x < boardLength; x++) {
-						std::cout << board[x][y] << " ";
-				}
-				std::cout << "\n";
-		}
-
-		std::cout << "\n\n\n" << std::endl;
-		*/
-
-
 		if(pieceClock.getElapsedTime().asMilliseconds() > pieceFallTime) {
 				pieceClock.restart();
 				ready = true;
@@ -281,14 +313,24 @@ bool Application::isRunning() {
 
 // Create a new piece
 void Application::newBlock() {
+		bool pushBlockUp = false;
 		for(int x = 0; x < boardLength; x++) {
+				if(board[x][1] != 0 && (x == 4 || x == 5)) {
+						pushBlockUp = true;
+				}
+
 				// Game over
 				if(board[x][0] != 0) {
-						playMode.setString("Game Over");
 						state = State::GAMEOVER;
+						soundEffect.setBuffer(gameOverSound);
+						soundEffect.play();
+						soundtrack.stop();
 				}
 		}
 		piece = Tetromino(rand() % 7);
+		if(pushBlockUp) {
+				piece.moveUp();
+		}
 }
 
 // Check the piece boundaries
@@ -312,15 +354,6 @@ bool Application::checkPieceMovement() {
 
 // Clear lines
 void Application::clearLines() {
-		/*
-		for(int y = 0; y < boardHeight; y++) {
-				for(int x = 0; x < boardLength; x++) {
-						std::cout << board[x][y] << " ";
-				}
-				std::cout << "\n";
-		}
-		std::cout << "\n\n\n";
-		*/
 
 		std::vector<int> rows;
 
@@ -341,16 +374,24 @@ void Application::clearLines() {
 				case 0:
 						break;
 				case 1:
+						soundEffect.setBuffer(lineclearSound);
+						soundEffect.play();
 						score += 40 * (currentLevel + 1);
 						break;
 				case 2:
 						score += 100 * (currentLevel + 1);
+						soundEffect.setBuffer(lineclearSound);
+						soundEffect.play();
 						break;
 				case 3:
 						score += 300 * (currentLevel + 1);
+						soundEffect.setBuffer(lineclearSound);
+						soundEffect.play();
 						break;
 				case 4:
 						score += 1200 * (currentLevel + 1);
+						soundEffect.setBuffer(tetrisSound);
+						soundEffect.play();
 				default:
 						break;
 		}
@@ -370,10 +411,10 @@ void Application::clearLines() {
 }
 
 void Application::manageLevel() {
-		if(linesCleared == 10) {
+		if(linesCleared >= 10) {
 				linesCleared = 0;
 				currentLevel++;
-				pieceFallTime = pieceFallTime * 0.8;
+				pieceFallTime = pieceFallTime * 0.9;
 				level.setString("Level " + std::to_string(currentLevel));
 		}
 }

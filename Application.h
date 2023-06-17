@@ -3,13 +3,13 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
+#include <SFML/Audio.hpp>
 #include <cassert>
 
 #include "Tetromino.h"
+#include "AI.h"
 
 
-const int boardLength = 10;
-const int boardHeight = 20;
 const float tileSize = 40;
 
 class Application {
@@ -18,6 +18,7 @@ class Application {
 		enum State {
 				RUN,
 				PAUSE,
+				AIPLAY,
 				GAMEOVER
 		};
 
@@ -43,6 +44,12 @@ class Application {
 				sf::Clock clock;
 				sf::Clock pieceClock;
 
+				sf::Music soundtrack;
+				sf::SoundBuffer lineclearSound;
+				sf::SoundBuffer gameOverSound;
+				sf::SoundBuffer tetrisSound;
+				sf::Sound soundEffect;
+
 				sf::Font* font;
 				sf::Text playMode;
 				sf::Text scoreBoard;
@@ -56,6 +63,8 @@ class Application {
 
 				State state;
 				Tetromino piece;
+		
+				AI tetrisAI;
 
 				sf::RectangleShape cell;
 

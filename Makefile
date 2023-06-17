@@ -3,9 +3,9 @@ CC = g++
 
 CFLAGS = -Wall -g
 
-LIBS = -lsfml-window -lsfml-graphics -lsfml-system
+LIBS = -lsfml-window -lsfml-graphics -lsfml-system -lsfml-audio
 
-SRCS = main.cpp Application.cpp Tetromino.cpp
+SRCS = main.cpp Application.cpp Tetromino.cpp AI.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 
