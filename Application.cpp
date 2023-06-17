@@ -70,6 +70,8 @@ Application::Application(int width, int length) {
 		level.setString("Level " + std::to_string(currentLevel));
 
 		tetrisAI = AI();
+		
+		nextPiece = Tetromino(rand() % 7);
 
 		newBlock();
 }
@@ -177,10 +179,22 @@ void Application::render() {
 		// render block
 		for(int y = 0; y < 4; y++) {
 				for(int x = 0; x < 4; x++) {
-						if(piece.blocks[piece.blockType-1][y][x]) {
+						if(piece.blocks[piece.blockIndex][y][x]) {
 								cell.setPosition(sf::Vector2f(xOffset + (y*tileSize) + piece.position.x * tileSize, 
 										yOffset + (x * tileSize) + piece.position.y * tileSize));
 								cell.setFillColor(piece.blockColor[piece.blockIndex]);
+								window->draw(cell);
+						}
+				}
+		}
+
+		// render next piece 
+		for(int y = 0; y < 4; y++) {
+				for(int x = 0; x < 4; x++) {
+						if(nextPiece.blocks[nextPiece.blockIndex][y][x]) {
+								cell.setPosition(sf::Vector2f(750 + (y * tileSize), 
+										100 + (x*tileSize)));
+								cell.setFillColor(nextPiece.blockColor[nextPiece.blockIndex]);
 								window->draw(cell);
 						}
 				}
@@ -327,7 +341,8 @@ void Application::newBlock() {
 						soundtrack.stop();
 				}
 		}
-		piece = Tetromino(rand() % 7);
+		piece = nextPiece;
+		nextPiece = Tetromino(rand() % 7);
 		if(pushBlockUp) {
 				piece.moveUp();
 		}

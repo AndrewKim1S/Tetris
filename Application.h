@@ -63,6 +63,7 @@ class Application {
 
 				State state;
 				Tetromino piece;
+				Tetromino nextPiece;
 		
 				AI tetrisAI;
 
